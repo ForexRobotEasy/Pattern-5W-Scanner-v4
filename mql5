@@ -1,0 +1,98 @@
+
+//+------------------------------------------------------------------+
+//|                                                  Pattern 5W Scanner v4 |
+//|                                 Copyright © 2022, Forex Robot Easy Team |
+//|                                           https://www.forexroboteasy.com |
+//+------------------------------------------------------------------+
+
+// Include necessary libraries
+#include <Trade\Trade.mqh>
+
+// Define constants
+#define SYMBOL 'EURUSD'
+#define PERIOD PERIOD_H1
+#define DRIVES_COUNT 5
+#define STOPLOSS 50
+#define TAKEPROFIT 100
+
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+    // Subscribe to the symbol and period
+    if(!SymbolSelect(SYMBOL, true))
+    {
+        Print('Failed to select symbol ', SYMBOL);
+        return INIT_FAILED;
+    }
+
+    if(!PeriodSelect(PERIOD))
+    {
+        Print('Failed to select period ', PERIOD);
+        return INIT_FAILED;
+    }
+
+    return INIT_SUCCEEDED;
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                              |
+//+------------------------------------------------------------------+
+void OnCalculate(const int rates_total,
+                 const int prev_calculated,
+                 const datetime& time[],
+                 const double& open[],
+                 const double& high[],
+                 const double& low[],
+                 const double& close[],
+                 const long& tick_volume[],
+                 const long& volume[],
+                 const int& spread[])
+{
+    // Perform Elliott Wave analysis
+    double wave1 = iCustom(NULL, PERIOD, 'ElliottWave', 1, 1);
+    double wave2 = iCustom(NULL, PERIOD, 'ElliottWave', 2, 1);
+    double wave3 = iCustom(NULL, PERIOD, 'ElliottWave', 3, 1);
+    double wave4 = iCustom(NULL, PERIOD, 'ElliottWave', 4, 1);
+    double wave5 = iCustom(NULL, PERIOD, 'ElliottWave', 5, 1);
+
+    // Check for 5W pattern
+    if(wave1 > wave2 && wave2 > wave3 && wave3 > wave4 && wave4 > wave5)
+    {
+        // Check for bullish scenario
+        if(wave5 > wave1)
+        {
+            // Open a buy trade
+            double entryPrice = Ask;
+            double stopLossPrice = entryPrice - STOPLOSS * _Point;
+            double takeProfitPrice = entryPrice + TAKEPROFIT * _Point;
+            int ticket = OrderSend(SYMBOL, OP_BUY, 0.1, entryPrice, 0, stopLossPrice, takeProfitPrice, 'Pattern 5W Scanner v4', 0, 0, Green);
+            if(ticket > 0)
+            {
+                Print('Buy trade opened at price ', entryPrice);
+            }
+            else
+            {
+                Print('Failed to open buy trade. Error code: ', GetLastError());
+            }
+        }
+        // Check for bearish scenario
+        else if(wave5 < wave1)
+        {
+            // Open a sell trade
+            double entryPrice = Bid;
+            double stopLossPrice = entryPrice + STOPLOSS * _Point;
+            double takeProfitPrice = entryPrice - TAKEPROFIT * _Point;
+            int ticket = OrderSend(SYMBOL, OP_SELL, 0.1, entryPrice, 0, stopLossPrice, takeProfitPrice, 'Pattern 5W Scanner v4', 0, 0, Red);
+            if(ticket > 0)
+            {
+                Print('Sell trade opened at price ', entryPrice);
+            }
+            else
+            {
+                Print('Failed to open sell trade. Error code: ', GetLastError());
+            }
+        }
+    }
+}
